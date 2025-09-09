@@ -1,5 +1,7 @@
 #include <iostream>
+#include <fstream>
 #include <string>
+#include <vector>
 using namespace std;
 
 const int SIZE = 9;
@@ -41,39 +43,72 @@ bool solveSudoku(int board[SIZE][SIZE]) {
 
 void printBoard(int board[SIZE][SIZE]) {
     for (int r = 0; r < SIZE; r++) {
+        if (r % 3 == 0) cout << "+-------+-------+-------+\n";
         for (int c = 0; c < SIZE; c++) {
+            if (c % 3 == 0) cout << "| ";
             cout << board[r][c] << " ";
         }
-        cout << "\n";
+        cout << "|\n";
     }
+    cout << "+-------+-------+-------+\n";
 }
 
-int main() {
-    int board[SIZE][SIZE];
+bool readPuzzle(istream& in, int board[SIZE][SIZE]) {
     string line;
-
-    cout << "Enter Sudoku puzzle, 9 lines with 9 chars each (digits 1-9, 0 or . for empty):\n";
+    vector<string> lines;
+    while ((int)lines.size() < SIZE && getline(in, line)) {
+        if ((int)line.size() < SIZE) continue; // skip short lines
+        lines.push_back(line);
+    }
+    if ((int)lines.size() != SIZE) return false; // incomplete puzzle
 
     for (int i = 0; i < SIZE; i++) {
-        getline(cin, line);
-        if (line.size() < SIZE) {
-            cerr << "Invalid input line length\n";
-            return 1;
-        }
         for (int j = 0; j < SIZE; j++) {
-            char ch = line[j];
+            char ch = lines[i][j];
             if (ch >= '1' && ch <= '9')
                 board[i][j] = ch - '0';
             else
-                board[i][j] = 0; // treat '.' or '0' or others as empty
+                board[i][j] = 0;
         }
     }
+    return true;
+}
 
-    if (solveSudoku(board)) {
-        cout << "\nSolved Sudoku:\n";
-        printBoard(board);
+int main(int argc, char* argv[]) {
+    istream* in = &cin;
+    ifstream file;
+
+    if (argc > 1) {
+        file.open(argv[1]);
+        if (!file) {
+            cerr << "Error opening file: " << argv[1] << "\n";
+            return 1;
+        }
+        in = &file;
     } else {
-        cout << "No solution exists.\n";
+        cout << "Enter Sudoku puzzles one by one (9 lines each). Ctrl+D to stop.\n";
+    }
+
+    int puzzleCount = 0;
+    int board[SIZE][SIZE];
+
+    while (readPuzzle(*in, board)) {
+        puzzleCount++;
+        cout << "\nPuzzle #" << puzzleCount << ":\n";
+        cout << "Input:\n";
+        printBoard(board);
+
+        if (solveSudoku(board)) {
+            cout << "Solved:\n";
+            printBoard(board);
+        } else {
+            cout << "No solution exists for this puzzle.\n";
+        }
+        cout << endl;
+    }
+
+    if (puzzleCount == 0) {
+        cout << "No puzzles found in input.\n";
     }
 
     return 0;
